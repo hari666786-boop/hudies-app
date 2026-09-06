@@ -1,1 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hudies</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Lora:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 
+:root{
+  --wood-dark:#211a15;
+  --wood:#2c221b;
+  --parchment:#efe4c8;
+  --parchment-dim:#e3d5ae;
+  --ink:#392c1f;
+  --ink-soft:#6b5a45;
+  --gold:#c9922e;
+  --gold-bright:#e0ab45;
+  --forest:#3f6b57;
+  --forest-dim:#cfe0d5;
+  --ember:#a8462f;
+  --line:#c9b98c;
+}
+
+*{box-sizing:border-box;}
+body{
+  margin:0;
+  min-height:100vh;
+  background:
+    radial-gradient(circle at 20% 10%, #34281f 0%, transparent 45%),
+    radial-gradient(circle at 80% 90%, #2a1f18 0%, transparent 50%),
+    var(--wood-dark);
+  font-family:'Lora',serif;
+  color:var(--ink);
+  padding:18px 14px 60px;
+}
+
+.app{max-width:640px;margin:0 auto;}
+
+/* Header / player card */
+.player-card{
+  background:var(--parchment);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:18px 18px 16px;
+  box-shadow:0 8px 24px rgba(0,0,0,0.35);
+  position:relative;
+  overflow:hidden;
+}
+.player-card::before{
+  content:"";
+  position:absolute; inset:0;
+  background:
+    repeating-linear-gradient(0deg, rgba(57,44,31,0.03) 0px, rgba(57,44,31,0.03) 1px, transparent 1px, transparent 3px);
+  pointer-events:none;
+}
+.title-row{display:flex; justify-content:space-between; align-items:baseline; gap:10px;}
+.title{
+  font-family:'Cinzel',serif;
+  font-weight:700;
+  font-size:1.5rem;
+  letter-spacing:0.02em;
+  color:var(--ink);
+  margin:0;
+}
+.level-badge{
+  font-family:'Cinzel',serif;
+  font-weight:600;
+  font-size:0.95rem;
+  color:var(--gold-bright);
+  background:var(--ink);
+  padding:5px 12px;
+  border-radius:20px;
+  white-space:nowrap;
+}
+.xp-row{margin-top:12px;}
+.xp-label{
+  display:flex; justify-content:space-between;
+  font-size:0.8rem; color:var(--ink-soft); margin-bottom:5px;
+}
+.bar-track{
+  height:12px; background:#d8c79b; border-radius:8px; overflow:hidden;
+  border:1px solid var(--line);
+}
+.bar-fill{
+  height:100%;
+  background:linear-gradient(90deg, var(--gold) 0%, var(--gold-bright) 100%);
+  border-radius:8px;
+  transition:width 0.5s ease;
+}
+.streak-row{
+  margin-top:12px; display:flex; align-items:center; gap:7px;
+  font-size:0.88rem; color:var(--ink-soft);
+}
+.streak-flame{font-size:1.05rem;}
+
+/* Add subject */
+.add-subject-form{
+  margin-top:16px;
+  display:flex; gap:8px;
+}
+.add-subject-form input{
+  flex:1; min-width:0;
+}
+
+input[type=text]{
+  font-family:'Lora',serif;
+  font-size:0.95rem;
+  padding:8px 10px;
+  border:1px solid var(--line);
+  border-radius:6px;
+  background:#fbf6e8;
+  color:var(--ink);
+}
+input[type=text]:focus{outline:2px solid var(--gold); outline-offset:1px;}
+
+button{
+  font-family:'Lora',serif;
+  cursor:pointer;
+  border:none;
+  border-radius:6px;
+  font-size:0.88rem;
+  padding:8px 14px;
+  background:var(--forest);
+  color:#f2f7f3;
+  transition:transform 0.12s ease, background 0.12s ease;
+}
+button:hover{background:#355d4b;}
+button:active{transform:scale(0.96);}
+button.ghost{
+  background:transparent; color:var(--ink-soft);
+  border:1px solid var(--line);
+}
+button.ghost:hover{background:rgba(57,44,31,0.06);}
+button.danger{background:transparent; color:var(--ember); padding:4px 8px; font-size:0.8rem;}
+button.danger:hover{background:rgba(168,70,47,0.1);}
+button.small{padding:5px 10px; font-size:0.8rem;}
+
+/* Realms (subjects) */
+.realms{margin-top:20px; display:flex; flex-direction:column; gap:14px;}
+
+.realm{
+  background:var(--parchment);
+  border:1px solid var(--line);
+  border-radius:10px;
+  box-shadow:0 6px 16px rgba(0,0,0,0.28);
+  overflow:hidden;
+}
+.realm-header{
+  padding:14px 16px;
+  display:flex; align-items:center; gap:10px;
+  cursor:pointer;
+  border-bottom:1px solid transparent;
+}
+.realm-header.open{border-bottom-color:var(--line);}
+.realm-caret{
+  font-size:0.75rem; color:var(--ink-soft);
+  transition:transform 0.2s ease;
+  flex-shrink:0;
+}
+.realm-caret.open{transform:rotate(90deg);}
+.realm-name{
+  font-family:'Cinzel',serif; font-weight:600; font-size:1.05rem;
+  flex:1; min-width:0;
+  background:transparent; border:none; color:var(--ink);
+  padding:2px 4px; border-radius:4px;
+}
+.realm-name:focus{outline:1px solid var(--gold); background:#fbf6e8;}
+.realm-progress-pct{
+  font-size:0.78rem; color:var(--ink-soft); white-space:nowrap;
+}
+.realm-body{padding:4px 16px 14px;}
+
+.realm-bar-track{
+  height:6px; background:#d8c79b; border-radius:6px; overflow:hidden; margin:0 16px 10px;
+}
+.realm-bar-fill{height:100%; background:var(--forest); border-radius:6px; transition:width 0.4s ease;}
+
+/* Chapters */
+.chapter{
+  border-top:1px dashed var(--line);
+  padding:10px 0;
+}
+.chapter:first-child{border-top:none;}
+.chapter-header{
+  display:flex; align-items:center; gap:9px; cursor:pointer;
+}
+.chapter-caret{font-size:0.7rem; color:var(--ink-soft); transition:transform 0.2s ease;}
+.chapter-caret.open{transform:rotate(90deg);}
+.chapter-name{
+  font-weight:600; font-size:0.92rem; flex:1; min-width:0;
+  background:transparent; border:none; color:var(--ink);
+  padding:2px 4px; border-radius:4px;
+}
+.chapter-name:focus{outline:1px solid var(--gold); background:#fbf6e8;}
+.chapter-pct{font-size:0.74rem; color:var(--ink-soft);}
+.chapter-bar-track{height:5px; background:#d8c79b; border-radius:5px; margin:7px 0 8px 21px; overflow:hidden;}
+.chapter-bar-fill{height:100%; background:var(--gold); border-radius:5px; transition:width 0.4s ease;}
+
+.topics{margin-left:21px; display:flex; flex-direction:column; gap:6px;}
+.topic{
+  display:flex; align-items:center; gap:8px;
+  background:rgba(255,255,255,0.35);
+  border:1px solid var(--line);
+  border-radius:6px;
+  padding:7px 9px;
+}
+.topic.done{background:rgba(63,107,87,0.14); border-color:var(--forest-dim);}
+.topic input[type=checkbox]{
+  width:17px; height:17px; accent-color:var(--forest); flex-shrink:0;
+}
+.topic-name{
+  flex:1; min-width:0; font-size:0.88rem;
+  background:transparent; border:none; color:var(--ink);
+  padding:2px 3px; border-radius:4px;
+}
+.topic.done .topic-name{text-decoration:line-through; color:var(--ink-soft);}
+.topic-name:focus{outline:1px solid var(--gold);}
+
+.add-row{display:flex; gap:7px; margin-top:8px;}
+.add-row input{flex:1; min-width:0; font-size:0.85rem; padding:6px 9px;}
+
+.realm-actions{
+  display:flex; justify-content:space-between; align-items:center;
+  margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
+}
+
+/* Empty state */
+.empty-state{
+  text-align:center; padding:34px 20px;
+  color:var(--parchment-dim);
+}
+.empty-state .scroll-icon{font-size:2rem; margin-bottom:8px;}
+.empty-state p{margin:4px 0; font-size:0.92rem;}
+
+/* Floating XP toast */
+.xp-toast{
+  position:fixed; left:50%; top:18%;
+  transform:translate(-50%, 0);
+  font-family:'Cinzel',serif; font-weight:700; font-size:1.1rem;
+  color:var(--gold-bright);
+  text-shadow:0 2px 6px rgba(0,0,0,0.6);
+  pointer-events:none;
+  animation:floatUp 1.1s ease-out forwards;
+  z-index:50;
+}
+@keyframes floatUp{
+  0%{opacity:0; transform:translate(-50%,10px) scale(0.9);}
+  15%{opacity:1; transform:translate(-50%,0) scale(1.05);}
+  75%{opacity:1;}
+  100%{opacity:0; transform:translate(-50%,-40px) scale(1);}
+}
+
+/* Level up banner */
+.levelup-overlay{
+  position:fixed; inset:0; background:rgba(20,15,10,0.55);
+  display:flex; align-items:center; justify-content:center;
+  z-index:60; animation:fadeIn 0.25s ease;
+}
+@keyframes fadeIn{from{opacity:0;} to{opacity:1;}}
+.levelup-card{
+  background:var(--parchment); border:2px solid var(--gold);
+  border-radius:12px; padding:26px 30px; text-align:center;
+  box-shadow:0 12px 40px rgba(0,0,0,0.5);
+  max-width:280px;
+}
+.levelup-card .rank{font-size:2rem; margin-bottom:6px;}
+.levelup-card h2{
+  font-family:'Cinzel',serif; margin:0 0 6px; color:var(--ink); font-size:1.25rem;
+}
+.levelup-card p{margin:0 0 16px; color:var(--ink-soft); font-size:0.9rem;}
+
+.footer-actions{
+  margin-top:22px; text-align:center;
+}
+.footer-actions button{font-size:0.78rem;}
+
+@media (min-width:480px){
+  .title{font-size:1.7rem;}
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="player-card">
+    <div class="title-row">
+      <h1 class="title">Hudies</h1>
+      <div class="level-badge" id="levelBadge">Level 1</div>
+    </div>
+    <div class="xp-row">
+      <div class="xp-label">
+        <span id="xpLabel">0 / 100 XP</span>
+        <span id="totalXpLabel">Total: 0 XP</span>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="xpBar" style="width:0%"></div></div>
+    </div>
+    <div class="streak-row">
+      <span class="streak-flame">🔥</span>
+      <span id="streakLabel">0 day streak — complete a task today to start one</span>
+    </div>
+
+    <form class="add-subject-form" id="addSubjectForm">
+      <input type="text" id="newSubjectInput" placeholder="Begin a new realm, e.g. Physics" maxlength="60">
+      <button type="submit">Add subject</button>
+    </form>
+  </div>
+
+  <div class="realms" id="realmsContainer"></div>
+
+  <div class="footer-actions">
+    <button class="ghost" id="resetBtn">Reset all progress</button>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'quest-log-data-v2';
+  let state = null;
+  let saveTimer = null;
+
+  function loadLocalState(){
+    try{
+      let raw = localStorage.getItem(STORAGE_KEY);
+      if(!raw){
+        raw = localStorage.getItem('quest-log-data-v1');
+        if(raw){
+          localStorage.setItem(STORAGE_KEY, raw);
+        }
+      }
+      return raw ? JSON.parse(raw) : null;
+    }catch(e){
+      console.error('Local save load failed', e);
+      return null;
+    }
+  }
+
+  function saveLocalState(){
+    try{
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      return true;
+    }catch(e){
+      console.error('Local save failed', e);
+      return false;
+    }
+  }
+
+  const XP_PER_TOPIC = 10;
+  const CHAPTER_BONUS = 25;
+  const SUBJECT_BONUS = 100;
+  const XP_PER_LEVEL = 100;
+
+  function uid(){ return Math.random().toString(36).slice(2,10); }
+  function todayStr(){ return new Date().toISOString().slice(0,10); }
+  function daysBetween(a,b){
+    return Math.round((new Date(b) - new Date(a)) / 86400000);
+  }
+
+  function defaultState(){
+    return {
+      xp: 0,
+      streak: 0,
+      lastActiveDate: null,
+      subjects: [
+        {
+          id: uid(),
+          name: 'Physics (example — rename or delete me)',
+          bonusAwarded: false,
+          chapters: [
+            {
+              id: uid(),
+              name: 'Motion in a Straight Line',
+              bonusAwarded: false,
+              topics: [
+                {id: uid(), name: 'Read the chapter once', done: false},
+                {id: uid(), name: 'Solve exercise Q1–Q5', done: false},
+                {id: uid(), name: 'Redo the numericals you got wrong', done: false}
+              ]
+            },
+            {
+              id: uid(),
+              name: 'Laws of Motion',
+              bonusAwarded: false,
+              topics: [
+                {id: uid(), name: 'Read the chapter once', done: false},
+                {id: uid(), name: 'Solve exercise Q1–Q5', done: false}
+              ]
+            }
+          ]
+        }
+      ],
+      openRealms: {},
+      openChapters: {}
+    };
+  }
+
+  function loadState(){
+    state = loadLocalState() || defaultState();
+    render();
+  }
+
+  function scheduleSave(){
+    clearTimeout(saveTimer);
+    saveTimer = setTimeout(()=>{
+      saveLocalState();
+    }, 100);
+  }
+
+  function levelFromXp(xp){
+    return Math.floor(xp / XP_PER_LEVEL) + 1;
+  }
+
+  function showXpToast(amount, x, y){
+    const el = document.createElement('div');
+    el.className = 'xp-toast';
+    el.textContent = '+' + amount + ' XP';
+    if(typeof x === 'number'){
+      el.style.left = x + 'px';
+      el.style.top = y + 'px';
+    }
+    document.body.appendChild(el);
+    setTimeout(()=> el.remove(), 1150);
+  }
+
+  function showLevelUp(newLevel){
+    const overlay = document.createElement('div');
+    overlay.className = 'levelup-overlay';
+    overlay.innerHTML = `
+      <div class="levelup-card">
+        <div class="rank">⚔️</div>
+        <h2>Level ${newLevel}!</h2>
+        <p>Your steady work is paying off. Keep the streak alive.</p>
+        <button id="levelUpClose">Continue</button>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#levelUpClose').addEventListener('click', ()=> overlay.remove());
+    setTimeout(()=>{ if(document.body.contains(overlay)) overlay.remove(); }, 3200);
+  }
+
+  function addXp(amount, evt){
+    const beforeLevel = levelFromXp(state.xp);
+    state.xp = Math.max(0, state.xp + amount);
+    const afterLevel = levelFromXp(state.xp);
+    if(amount > 0){
+      let x, y;
+      if(evt && evt.clientX){ x = evt.clientX; y = evt.clientY; }
+      showXpToast(amount, x, y);
+    }
+    if(afterLevel > beforeLevel){
+      setTimeout(()=> showLevelUp(afterLevel), 300);
+    }
+  }
+
+  function bumpStreak(){
+    const today = todayStr();
+    if(state.lastActiveDate === today) return;
+    if(state.lastActiveDate){
+      const gap = daysBetween(state.lastActiveDate, today);
+      state.streak = gap === 1 ? state.streak + 1 : 1;
+    } else {
+      state.streak = 1;
+    }
+    state.lastActiveDate = today;
+  }
+
+  function chapterStats(chapter){
+    const total = chapter.topics.length;
+    const done = chapter.topics.filter(t=>t.done).length;
+    return {total, done, pct: total ? Math.round(done/total*100) : 0};
+  }
+  function subjectStats(subject){
+    let total = 0, done = 0;
+    subject.chapters.forEach(c=>{
+      total += c.topics.length;
+      done += c.topics.filter(t=>t.done).length;
+    });
+    return {total, done, pct: total ? Math.round(done/total*100) : 0};
+  }
+
+  function toggleTopic(subject, chapter, topic, evt){
+    topic.done = !topic.done;
+    if(topic.done){
+      addXp(XP_PER_TOPIC, evt);
+      bumpStreak();
+      const cs = chapterStats(chapter);
+      if(cs.total > 0 && cs.done === cs.total && !chapter.bonusAwarded){
+        chapter.bonusAwarded = true;
+        setTimeout(()=> addXp(CHAPTER_BONUS), 250);
+      }
+      const ss = subjectStats(subject);
+      if(ss.total > 0 && ss.done === ss.total && !subject.bonusAwarded){
+        subject.bonusAwarded = true;
+        setTimeout(()=> addXp(SUBJECT_BONUS), 500);
+      }
+    } else {
+      addXp(-XP_PER_TOPIC);
+      if(chapter.bonusAwarded){
+        chapter.bonusAwarded = false;
+      }
+      if(subject.bonusAwarded){
+        subject.bonusAwarded = false;
+      }
+    }
+    scheduleSave();
+    render();
+  }
+
+  function render(){
+    const level = levelFromXp(state.xp);
+    const xpIntoLevel = state.xp % XP_PER_LEVEL;
+    document.getElementById('levelBadge').textContent = 'Level ' + level;
+    document.getElementById('xpLabel').textContent = xpIntoLevel + ' / ' + XP_PER_LEVEL + ' XP';
+    document.getElementById('totalXpLabel').textContent = 'Total: ' + state.xp + ' XP';
+    document.getElementById('xpBar').style.width = xpIntoLevel + '%';
+
+    const streakLabel = document.getElementById('streakLabel');
+    if(state.streak > 0){
+      const today = todayStr();
+      const studiedToday = state.lastActiveDate === today;
+      streakLabel.textContent = state.streak + ' day streak' + (studiedToday ? ' — nice work today' : ' — complete a task today to keep it alive');
+    } else {
+      streakLabel.textContent = '0 day streak — complete a task today to start one';
+    }
+
+    const container = document.getElementById('realmsContainer');
+    container.innerHTML = '';
+
+    if(state.subjects.length === 0){
+      const empty = document.createElement('div');
+      empty.className = 'empty-state';
+      empty.innerHTML = `<div class="scroll-icon">📜</div><p>Your quest map is blank.</p><p>Add a subject above to start charting it.</p>`;
+      container.appendChild(empty);
+      return;
+    }
+
+    state.subjects.forEach(subject=>{
+      const ss = subjectStats(subject);
+      const isOpen = !!state.openRealms[subject.id];
+
+      const realmEl = document.createElement('div');
+      realmEl.className = 'realm';
+
+      const header = document.createElement('div');
+      header.className = 'realm-header' + (isOpen ? ' open' : '');
+      header.innerHTML = `
+        <span class="realm-caret${isOpen ? ' open' : ''}">▶</span>
+        <input class="realm-name" type="text" value="${escapeAttr(subject.name)}" maxlength="60">
+        <span class="realm-progress-pct">${ss.done}/${ss.total}</span>
+      `;
+      header.querySelector('.realm-caret').addEventListener('click', ()=>{
+        state.openRealms[subject.id] = !isOpen;
+        render();
+      });
+      header.querySelector('.realm-name').addEventListener('click', (e)=> e.stopPropagation());
+      header.querySelector('.realm-name').addEventListener('change', (e)=>{
+        subject.name = e.target.value.trim() || subject.name;
+        scheduleSave();
+      });
+      header.addEventListener('click', (e)=>{
+        if(e.target.classList.contains('realm-name')) return;
+        state.openRealms[subject.id] = !isOpen;
+        render();
+      });
+      realmEl.appendChild(header);
+
+      const barTrack = document.createElement('div');
+      barTrack.className = 'realm-bar-track';
+      barTrack.innerHTML = `<div class="realm-bar-fill" style="width:${ss.pct}%"></div>`;
+      realmEl.appendChild(barTrack);
+
+      if(isOpen){
+        const body = document.createElement('div');
+        body.className = 'realm-body';
+
+        subject.chapters.forEach(chapter=>{
+          const cs = chapterStats(chapter);
+          const chapOpen = !!state.openChapters[chapter.id];
+
+          const chEl = document.createElement('div');
+          chEl.className = 'chapter';
+
+          const chHeader = document.createElement('div');
+          chHeader.className = 'chapter-header';
+          chHeader.innerHTML = `
+            <span class="chapter-caret${chapOpen ? ' open' : ''}">▶</span>
+            <input class="chapter-name" type="text" value="${escapeAttr(chapter.name)}" maxlength="60">
+            <span class="chapter-pct">${cs.done}/${cs.total}</span>
+          `;
+          chHeader.querySelector('.chapter-name').addEventListener('click', (e)=> e.stopPropagation());
+          chHeader.querySelector('.chapter-name').addEventListener('change', (e)=>{
+            chapter.name = e.target.value.trim() || chapter.name;
+            scheduleSave();
+          });
+          chHeader.addEventListener('click', (e)=>{
+            if(e.target.classList.contains('chapter-name')) return;
+            state.openChapters[chapter.id] = !chapOpen;
+            render();
+          });
+          chEl.appendChild(chHeader);
+
+          const chBarTrack = document.createElement('div');
+          chBarTrack.className = 'chapter-bar-track';
+          chBarTrack.innerHTML = `<div class="chapter-bar-fill" style="width:${cs.pct}%"></div>`;
+          chEl.appendChild(chBarTrack);
+
+          if(chapOpen){
+            const topicsEl = document.createElement('div');
+            topicsEl.className = 'topics';
+
+            chapter.topics.forEach(topic=>{
+              const tEl = document.createElement('div');
+              tEl.className = 'topic' + (topic.done ? ' done' : '');
+              tEl.innerHTML = `
+                <input type="checkbox" ${topic.done ? 'checked' : ''}>
+                <input class="topic-name" type="text" value="${escapeAttr(topic.name)}" maxlength="80">
+                <button class="danger" title="Remove task">✕</button>
+              `;
+              tEl.querySelector('input[type=checkbox]').addEventListener('change', (e)=>{
+                toggleTopic(subject, chapter, topic, e);
+              });
+              tEl.querySelector('.topic-name').addEventListener('change', (e)=>{
+                topic.name = e.target.value.trim() || topic.name;
+                scheduleSave();
+              });
+              tEl.querySelector('.danger').addEventListener('click', ()=>{
+                chapter.topics = chapter.topics.filter(t=> t.id !== topic.id);
+                scheduleSave();
+        
