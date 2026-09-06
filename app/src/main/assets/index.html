@@ -40,6 +40,7 @@ body{
 
 .app{max-width:640px;margin:0 auto;}
 
+/* Header / player card */
 .player-card{
   background:linear-gradient(160deg, var(--panel-2) 0%, var(--panel) 100%);
   border:1px solid var(--line);
@@ -110,6 +111,7 @@ body{
 }
 .streak-flame{font-size:1.1rem;}
 
+/* Add subject */
 .add-subject-form{
   margin-top:18px;
   display:flex; gap:8px;
@@ -154,6 +156,7 @@ button.danger:hover{background:rgba(239,106,95,0.12);}
 button.small{padding:6px 11px; font-size:0.8rem;}
 button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold)); color:#1a1408;}
 
+/* Realms (subjects) */
 .realms{margin-top:22px; display:flex; flex-direction:column; gap:14px;}
 
 .realm{
@@ -183,7 +186,14 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
   background:transparent; border:none; color:var(--text);
   padding:2px 4px; border-radius:6px;
 }
+.realm-name{cursor:pointer;}
+.realm-name:not([readonly]){cursor:text;}
 .realm-name:focus{outline:1px solid var(--gold); background:#0e1424;}
+.rename-btn{
+  flex-shrink:0; background:transparent; border:none; color:var(--text-dim);
+  font-size:0.9rem; padding:4px 6px; border-radius:6px;
+}
+.rename-btn:hover{background:rgba(255,255,255,0.06); color:var(--text-soft);}
 .realm-progress-pct{
   font-size:0.78rem; color:var(--text-soft); white-space:nowrap; font-weight:600;
 }
@@ -194,6 +204,7 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
 }
 .realm-bar-fill{height:100%; background:linear-gradient(90deg, var(--emerald), #2fae76); border-radius:6px; transition:width 0.4s ease;}
 
+/* Chapters */
 .chapter{
   border-top:1px dashed var(--line-soft);
   padding:12px 0;
@@ -210,6 +221,8 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
   background:transparent; border:none; color:var(--text);
   padding:2px 4px; border-radius:6px;
 }
+.chapter-name{cursor:pointer;}
+.chapter-name:not([readonly]){cursor:text;}
 .chapter-name:focus{outline:1px solid var(--gold); background:#0e1424;}
 .chapter-pct{font-size:0.74rem; color:var(--text-soft); font-weight:600;}
 .chapter-bar-track{height:5px; background:#0e1424; border-radius:5px; margin:8px 0 9px 23px; overflow:hidden;}
@@ -244,6 +257,7 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
   margin-top:6px; padding-top:12px; border-top:1px dashed var(--line-soft);
 }
 
+/* Empty state */
 .empty-state{
   text-align:center; padding:40px 20px;
   color:var(--text-dim);
@@ -251,6 +265,7 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
 .empty-state .scroll-icon{font-size:2.4rem; margin-bottom:10px;}
 .empty-state p{margin:4px 0; font-size:0.92rem;}
 
+/* Floating XP toast */
 .xp-toast{
   position:fixed; left:50%; top:18%;
   transform:translate(-50%, 0);
@@ -268,6 +283,7 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
   100%{opacity:0; transform:translate(-50%,-40px) scale(1);}
 }
 
+/* Level up banner */
 .levelup-overlay{
   position:fixed; inset:0; background:rgba(6,9,16,0.72);
   display:flex; align-items:center; justify-content:center;
@@ -532,12 +548,14 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
   }
 
   function addChapterToSubject(subject){
-    subject.chapters.push({
+    const chapter = {
       id: uid(),
       name: 'New chapter',
       bonusAwarded: false,
       topics: []
-    });
+    };
+    subject.chapters.push(chapter);
+    state.openChapters[chapter.id] = true;
     scheduleSave();
     render();
   }
@@ -588,45 +606,30 @@ button.gold{background:linear-gradient(135deg, var(--gold-bright), var(--gold));
       header.innerHTML = `
         <span class="realm-caret${isOpen ? ' open' : ''}">▶</span>
         <span class="realm-icon">📚</span>
-        <input class="realm-name" type="text" value="${escapeAttr(subject.name)}" maxlength="60">
+        <input class="realm-name" type="text" value="${escapeAttr(subject.name)}" maxlength="60" readonly>
+        <button type="button" class="rename-btn" title="Rename">✎</button>
         <span class="realm-progress-pct">${ss.done}/${ss.total}</span>
       `;
-      header.querySelector('.realm-caret').addEventListener('click', ()=>{
-        state.openRealms[subject.id] = !isOpen;
-        render();
+      const realmNameInput = header.querySelector('.realm-name');
+      const realmRenameBtn = header.querySelector('.rename-btn');
+
+      realmRenameBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        realmNameInput.removeAttribute('readonly');
+        realmNameInput.focus();
+        realmNameInput.select();
       });
-      header.querySelector('.realm-name').addEventListener('click', (e)=> e.stopPropagation());
-      header.querySelector('.realm-name').addEventListener('change', (e)=>{
+      realmNameInput.addEventListener('keydown', (e)=>{
+        if(e.key === 'Enter'){ e.preventDefault(); realmNameInput.blur(); }
+      });
+      realmNameInput.addEventListener('blur', (e)=>{
         subject.name = e.target.value.trim() || subject.name;
+        e.target.value = subject.name;
+        e.target.setAttribute('readonly', '');
         scheduleSave();
+        render();
       });
       header.addEventListener('click', (e)=>{
-        if(e.target.classList.contains('realm-name')) return;
-        state.openRealms[subject.id] = !isOpen;
-        render();
-      });
-      realmEl.appendChild(header);
-
-      const barTrack = document.createElement('div');
-      barTrack.className = 'realm-bar-track';
-      barTrack.innerHTML = `<div class="realm-bar-fill" style="width:${ss.pct}%"></div>`;
-      realmEl.appendChild(barTrack);
-
-      if(isOpen){
-        const body = document.createElement('div');
-        body.className = 'realm-body';
-
-        subject.chapters.forEach(chapter=>{
-          const cs = chapterStats(chapter);
-          const chapOpen = !!state.openChapters[chapter.id];
-
-          const chEl = document.createElement('div');
-          chEl.className = 'chapter';
-
-          const chHeader = document.createElement('div');
-          chHeader.className = 'chapter-header';
-          chHeader.innerHTML = `
-            <span class="chapter-caret${chapOpen ? ' open' : ''}">▶</span>
-            <span class="chapter-icon">📖</span>
-            <input class="chapter-name" type="text" value="${escapeAttr(chapter.name)}" maxlength="60">
-            <span class="chapter-pct">${cs.done}/${cs.tota
+        if(e.target === realmRenameBtn) return;
+        if(e.target === realmNameInput && !realmNameInput.hasAttribute('readonly')) return;
+        state.openRealms[subject.id] = !isOpen
