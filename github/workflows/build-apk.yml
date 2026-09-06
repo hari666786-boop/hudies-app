@@ -7,8 +7,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Unzip project
-        run: unzip -o Hudies_Android_Project_Complete.zip -d .
       - uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
