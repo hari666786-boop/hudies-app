@@ -37,7 +37,6 @@ body{
 
 .app{max-width:640px;margin:0 auto;}
 
-/* Header / player card */
 .player-card{
   background:var(--parchment);
   border:1px solid var(--line);
@@ -94,7 +93,6 @@ body{
 }
 .streak-flame{font-size:1.05rem;}
 
-/* Add subject */
 .add-subject-form{
   margin-top:16px;
   display:flex; gap:8px;
@@ -136,7 +134,6 @@ button.danger{background:transparent; color:var(--ember); padding:4px 8px; font-
 button.danger:hover{background:rgba(168,70,47,0.1);}
 button.small{padding:5px 10px; font-size:0.8rem;}
 
-/* Realms (subjects) */
 .realms{margin-top:20px; display:flex; flex-direction:column; gap:14px;}
 
 .realm{
@@ -176,7 +173,6 @@ button.small{padding:5px 10px; font-size:0.8rem;}
 }
 .realm-bar-fill{height:100%; background:var(--forest); border-radius:6px; transition:width 0.4s ease;}
 
-/* Chapters */
 .chapter{
   border-top:1px dashed var(--line);
   padding:10px 0;
@@ -225,7 +221,6 @@ button.small{padding:5px 10px; font-size:0.8rem;}
   margin-top:12px; padding-top:10px; border-top:1px dashed var(--line);
 }
 
-/* Empty state */
 .empty-state{
   text-align:center; padding:34px 20px;
   color:var(--parchment-dim);
@@ -233,7 +228,6 @@ button.small{padding:5px 10px; font-size:0.8rem;}
 .empty-state .scroll-icon{font-size:2rem; margin-bottom:8px;}
 .empty-state p{margin:4px 0; font-size:0.92rem;}
 
-/* Floating XP toast */
 .xp-toast{
   position:fixed; left:50%; top:18%;
   transform:translate(-50%, 0);
@@ -251,7 +245,6 @@ button.small{padding:5px 10px; font-size:0.8rem;}
   100%{opacity:0; transform:translate(-50%,-40px) scale(1);}
 }
 
-/* Level up banner */
 .levelup-overlay{
   position:fixed; inset:0; background:rgba(20,15,10,0.55);
   display:flex; align-items:center; justify-content:center;
@@ -625,4 +618,12 @@ button.small{padding:5px 10px; font-size:0.8rem;}
               tEl.querySelector('.danger').addEventListener('click', ()=>{
                 chapter.topics = chapter.topics.filter(t=> t.id !== topic.id);
                 scheduleSave();
-        
+                render();
+              });
+              topicsEl.appendChild(tEl);
+            });
+
+            chEl.appendChild(topicsEl);
+          }
+
+ 
